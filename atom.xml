@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>以太</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://alfredcai.cz/"/>
+  <updated>2019-04-07T15:53:07.036Z</updated>
+  <id>https://alfredcai.cz/</id>
+  
+  <author>
+    <name>Alfred Cai</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>为什么要用 git</title>
+    <link href="https://alfredcai.cz/2019-03-26-recommend-git.html"/>
+    <id>https://alfredcai.cz/2019-03-26-recommend-git.html</id>
+    <published>2019-03-25T16:00:00.000Z</published>
+    <updated>2019-04-07T15:53:07.036Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="为什么推荐用-git"><a href="#为什么推荐用-git" class="headerlink" title="为什么推荐用 git"></a>为什么推荐用 git</h1><p>很多朋友包括我，一提起 git 首先想到的是 GitHub，以及 GitHub 后面所代表的丰富的社区和代码分享。但是我今天想说的是，即使你的代码甚至是文件不是准备用来分享的，也推荐使用 git。</p><h3 id="版本控制"><a href="#版本控制" class="headerlink" title="版本控制"></a>版本控制</h3><p>现在在个人的 vps 上，我的文件夹都会在本地布置一个 git 作为版本控制。因为 git 帮我解决了一下的问题：</p><ul><li>两次登录时间间隔太长，上次登录所操作的文件已经不记得了。我用 <code>git commit</code> 中记录本次操作的大致内容和想法，<code>git log</code> 来查看之前的操作。</li><li>服务器上的文件修改会直接影响到许多正在运行的系统，每次操作都需要进行备份和回滚。git 同样可以实现这一点，<code>git commit</code>在我看来相当于对文件进行快照，在紧急情况下，可以回滚到之前的提交，并且还能保留当前未保存的文件，确认清楚后再重新提交</li></ul><h3 id="文件对比-diff"><a href="#文件对比-diff" class="headerlink" title="文件对比 diff"></a>文件对比 diff</h3><p>不管是在服务器上还是本地文件，相同文件的个别地方差异总是让人很难过，找起来也很恼人。Word 等二进制文件没办法，只能通过网页版的 diff online 进行查找，但是对于纯文本类型的文件，可以直接在命令行下进行比较，许多的文档编辑器也支持按行比较，方便而且直观。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;为什么推荐用-git&quot;&gt;&lt;a href=&quot;#为什么推荐用-git&quot; class=&quot;headerlink&quot; title=&quot;为什么推荐用 git&quot;&gt;&lt;/a&gt;为什么推荐用 git&lt;/h1&gt;&lt;p&gt;很多朋友包括我，一提起 git 首先想到的是 GitHub，以及 GitHu
+      
+    
+    </summary>
+    
+    
+      <category term="git" scheme="https://alfredcai.cz/tags/git/"/>
+    
+      <category term="vps" scheme="https://alfredcai.cz/tags/vps/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>在Ubuntu16.04上安装Cuda 8.0和 cuDNN 6.0</title>
+    <link href="https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html"/>
+    <id>https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html</id>
+    <published>2017-12-24T15:38:58.000Z</published>
+    <updated>2019-04-07T15:53:30.799Z</updated>
+    
+    <content type="html"><![CDATA[<p>安装rensorflow教程较多较杂，于是自己记录了一份。<br>由于现在Nvidia的cuda已经默认是9.0版本了，但是tensorflow还是只支持到cuda8和 cuDNN6。所以本教程也是根据tensorflow选择了老版本。</p><ul><li>系统版本：Ubuntu-GNOME 16.04</li><li>显卡：Nviida 1070Ti</li></ul><h2 id="0安装-cuda8-0"><a href="#0安装-cuda8-0" class="headerlink" title="0安装 cuda8.0"></a>0安装 cuda8.0</h2><p>很多教程都是先安装显卡驱动，再运行.run 文件的。在自己安装了几次之后个人还是喜欢下载.deb 文件，包管理器会自动安装显卡驱动的。</p><p>官网默认是cuda9，所以需要在<a href="https://developer.nvidia.com/cuda-toolkit-archive" target="_blank" rel="noopener">https://developer.nvidia.com/cuda-toolkit-archive</a>找到8.0版本。<br>我们就点 cuda-80-ga2 ==&gt; Linux ==&gt; x86_64 ==&gt; 16.04 ==&gt; deb(local) 或者 deb(network)<br>下载“cuda-repo-ubuntu1604_8.0.61-1_amd64.deb”<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install cuda-8-0</span><br></pre></td></tr></table></figure></p><p>注意，其他教程里写的都是install cuda，但是我们不是安装最新的cuda，要选择成cuda-8-0</p><p>安装好之后建议重启一下，因为显卡驱动必须重启一下还能正常使用</p><h4 id="配置cuda"><a href="#配置cuda" class="headerlink" title="配置cuda"></a>配置cuda</h4><p>我用的是zsh，所以是在.zshrc 里配置。默认的是bash，只需把.zshrc改成.bashrc就行了<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano .zshrc</span><br></pre></td></tr></table></figure></p><p>在.zshrc的最前面写入环境变量的配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">export CUDA_HOME=/usr/local/cuda-8.0</span><br><span class="line">export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH</span><br><span class="line">export PATH=/usr/local/cuda-8.0/bin:$PATH</span><br></pre></td></tr></table></figure></p><p>重新载入.zshrc<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source .zshrc</span><br></pre></td></tr></table></figure></p><h4 id="测试cuda和显卡驱动"><a href="#测试cuda和显卡驱动" class="headerlink" title="测试cuda和显卡驱动"></a>测试cuda和显卡驱动</h4><p>检查cuda的环境变量是否配置成功<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc --version</span><br></pre></td></tr></table></figure></p><p>进入cuda代码样例(默认在用户文件夹下)检查显卡驱动是否安装成功<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd /home/*/NVIDIA_CUDA-8.0_Samples/1_Utilities/deviceQuery</span><br><span class="line">make -j</span><br><span class="line">./deviceQuery</span><br></pre></td></tr></table></figure></p><h2 id="1安装cuDNN6"><a href="#1安装cuDNN6" class="headerlink" title="1安装cuDNN6"></a>1安装cuDNN6</h2><p>安装cuDNN需要注册一个Nvidia的开发者帐号，当然也是免费的。网址<a href="https://developer.nvidia.com/rdp/cuDNN-download" target="_blank" rel="noopener">https://developer.nvidia.com/rdp/cuDNN-download</a></p><p>注意要下载”Download cuDNN v6.0 (April 27, 2017), for CUDA 8.0“ ==&gt; “cuDNN v6.0 Library for Linux”<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xzvf cuDNN-8.0-linux-x64-v6.0.tgz </span><br><span class="line">sudo cp include/cuDNN.h /usr/local/cuda/include/</span><br><span class="line">sudo cp lib64/* /usr/local/cuda/lib64/</span><br></pre></td></tr></table></figure></p><p>注意lib64里面其实只有两个文件，还有两个是软链接，复制后需要重新制作软链<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cd /usr/local/cuda/lib64/ </span><br><span class="line">sudo rm -rf libcuDNN.so libcuDNN.so.6 </span><br><span class="line">sudo ln -s libcuDNN.so.6.0.21 libcuDNN.so.6</span><br><span class="line">sudo ln -s libcuDNN.so.6 libcuDNN.so</span><br></pre></td></tr></table></figure></p><h2 id="2安装tensorflow"><a href="#2安装tensorflow" class="headerlink" title="2安装tensorflow"></a>2安装tensorflow</h2><p>跟着官网去安装就好了，没有什么需要配置的内容了。</p><h4 id="当然先建议将apt和pypi的安装源切换到国内源"><a href="#当然先建议将apt和pypi的安装源切换到国内源" class="headerlink" title="当然先建议将apt和pypi的安装源切换到国内源"></a>当然先建议将apt和pypi的安装源切换到国内源</h4><p>个人常用的是清华的源<a href="https://mirrors.tuna.tsinghua.edu.cn/help/pypi/" target="_blank" rel="noopener">https://mirrors.tuna.tsinghua.edu.cn/help/pypi/</a></p><p>当然推荐一下母校的源，虽然这个是在我毕业之后才有的。。。<a href="https://mirrors.shu.edu.cn/help/pypi.html" target="_blank" rel="noopener">https://mirrors.shu.edu.cn/help/pypi.html</a></p><h4 id="安装方式纠结"><a href="#安装方式纠结" class="headerlink" title="安装方式纠结"></a>安装方式纠结</h4><p>会有人去纠结用virtualenv还是pip安装，个人的想法是如果一直都要用的可以用pip。如果是抱着试一试的心态，或是有处女座洁癖的码农可以用virtualenv，它可以创建出一个独立的python第三方库的环境。</p><h4 id="当然建议再安装Keras"><a href="#当然建议再安装Keras" class="headerlink" title="当然建议再安装Keras"></a>当然建议再安装Keras</h4>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;安装rensorflow教程较多较杂，于是自己记录了一份。&lt;br&gt;由于现在Nvidia的cuda已经默认是9.0版本了，但是tensorflow还是只支持到cuda8和 cuDNN6。所以本教程也是根据tensorflow选择了老版本。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;系统版本：
+      
+    
+    </summary>
+    
+    
+      <category term="cuda" scheme="https://alfredcai.cz/tags/cuda/"/>
+    
+      <category term="cudnn" scheme="https://alfredcai.cz/tags/cudnn/"/>
+    
+      <category term="ubuntu" scheme="https://alfredcai.cz/tags/ubuntu/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="https://alfredcai.cz/2017-04-27-hello-world.html"/>
+    <id>https://alfredcai.cz/2017-04-27-hello-world.html</id>
+    <published>2017-04-27T13:41:48.000Z</published>
+    <updated>2017-04-27T13:41:48.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&quot;https://hexo.
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+</feed>
