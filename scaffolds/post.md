@@ -1,0 +1,7 @@
+---
+title: {{ title }}
+date: {{ date }}
+tags:
+author: {{author}}
+mathjax: false
+---
