@@ -103,4 +103,4 @@ sudo ln -s libcuDNN.so.6 libcuDNN.so
 
 ### 安装方式纠结
 
-会有人去纠结用virtualenv还是pip安装，个人的想法是如果一直都要用的可以用pip。如果是抱着试一试的心态，或是有处女座洁癖的码农可以用virtualenv，它可以创建出一个独立的python第三方库的环境。
+会有人去纠结用virtualenv还是pip安装，个人的想法是如果一直都要用的可以用pip。如果是抱着试一试的心态，或是有处女座洁癖的码农可以用virtualenv，它可以创建出一个独立的python第三方库的环境。正式的一个项目或是网上下载的项目，建议还是用virtualenv，独立的环境能避免一些没必要的版本问题。
