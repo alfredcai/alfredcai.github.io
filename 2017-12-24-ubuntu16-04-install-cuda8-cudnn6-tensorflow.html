@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="vu1znWc0ul5fZvkVo2iwOaXoOZh5iZ6oY2xYROi_Qq4">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  
+  <link rel="stylesheet" href="/lib/animate-css/animate.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.min.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"alfredcai.cz","root":"/","scheme":"Pisces","version":"8.0.0-rc.4","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}}};
+  </script>
+
+  <meta name="description" content="安装tensorflow教程较多较杂，于是自己记录了一份。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在Ubuntu16.04上安装Cuda 8.0和 cuDNN 6.0">
+<meta property="og:url" content="https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html">
+<meta property="og:site_name" content="Alfred Cai">
+<meta property="og:description" content="安装tensorflow教程较多较杂，于是自己记录了一份。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-24T15:38:58.000Z">
+<meta property="article:modified_time" content="2020-07-09T04:03:28.209Z">
+<meta property="article:author" content="alfred.cai">
+<meta property="article:tag" content="ubuntu">
+<meta property="article:tag" content="cuda">
+<meta property="article:tag" content="cudnn">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>在Ubuntu16.04上安装Cuda 8.0和 cuDNN 6.0 | Alfred Cai</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-98280031-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-98280031-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?be494fbf9a5bda7a137b273396208824";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Alfred Cai" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line toggle-line-first"></span>
+        <span class="toggle-line toggle-line-middle"></span>
+        <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Alfred Cai</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">12</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">5</span></a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0安装-cuda8-0"><span class="nav-number">1.</span> <span class="nav-text">0安装 cuda8.0</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置cuda"><span class="nav-number">1.1.</span> <span class="nav-text">配置cuda</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试cuda和显卡驱动"><span class="nav-number">1.2.</span> <span class="nav-text">测试cuda和显卡驱动</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1安装cuDNN6"><span class="nav-number">2.</span> <span class="nav-text">1安装cuDNN6</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2安装tensorflow"><span class="nav-number">3.</span> <span class="nav-text">2安装tensorflow</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#当然先建议将apt和pypi的安装源切换到国内源"><span class="nav-number">3.1.</span> <span class="nav-text">当然先建议将apt和pypi的安装源切换到国内源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装方式纠结"><span class="nav-number">3.2.</span> <span class="nav-text">安装方式纠结</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">alfred.cai</p>
+  <div class="site-description" itemprop="description">一个子虚乌有的传播介质</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/alfredcai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;alfredcai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:alfredcai@outlook.com" title="E-Mail → mailto:alfredcai@outlook.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://t.me/alfredcai" title="Telegram → https:&#x2F;&#x2F;t.me&#x2F;alfredcai" rel="noopener" target="_blank"><i class="fab fa-telegram fa-fw"></i>Telegram</a>
+      </span>
+  </div>
+
+
+
+      </section>
+        <div class="back-to-top animated">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="alfred.cai">
+      <meta itemprop="description" content="一个子虚乌有的传播介质">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Alfred Cai">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在Ubuntu16.04上安装Cuda 8.0和 cuDNN 6.0
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-12-24 23:38:58" itemprop="dateCreated datePublished" datetime="2017-12-24T23:38:58+08:00">2017-12-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-09 12:03:28" itemprop="dateModified" datetime="2020-07-09T12:03:28+08:00">2020-07-09</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>安装tensorflow教程较多较杂，于是自己记录了一份。<br><a id="more"></a><br>由于现在Nvidia的cuda已经默认是9.0版本了，但是tensorflow还是只支持到cuda8和 cuDNN6。所以本教程也是根据tensorflow选择了老版本。</p>
+<ul>
+<li>系统版本：Ubuntu-GNOME 16.04</li>
+<li>显卡：Nviida 1070Ti</li>
+</ul>
+<h2 id="0安装-cuda8-0"><a href="#0安装-cuda8-0" class="headerlink" title="0安装 cuda8.0"></a>0安装 cuda8.0</h2><p>很多教程都是先安装显卡驱动，再运行.run 文件的。在自己安装了几次之后个人还是喜欢下载.deb 文件，包管理器会自动安装显卡驱动的。</p>
+<p>官网默认是cuda9，所以需要在<a href="https://developer.nvidia.com/cuda-toolkit-archive" target="_blank" rel="noopener">https://developer.nvidia.com/cuda-toolkit-archive</a>找到8.0版本。<br>我们就点 cuda-80-ga2 ==&gt; Linux ==&gt; x86_64 ==&gt; 16.04 ==&gt; deb(local) 或者 deb(network)<br>下载“cuda-repo-ubuntu1604_8.0.61-1_amd64.deb”</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install cuda-8-0</span><br></pre></td></tr></table></figure>
+<p>注意，其他教程里写的都是install cuda，但是我们不是安装最新的cuda，要选择成cuda-8-0</p>
+<p>安装好之后建议重启一下，因为显卡驱动必须重启一下还能正常使用</p>
+<h3 id="配置cuda"><a href="#配置cuda" class="headerlink" title="配置cuda"></a>配置cuda</h3><p>我用的是zsh，所以是在.zshrc 里配置。默认的是bash，只需把.zshrc改成.bashrc就行了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano .zshrc</span><br></pre></td></tr></table></figure>
+<p>在.zshrc的最前面写入环境变量的配置</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> CUDA_HOME=/usr/<span class="built_in">local</span>/cuda-8.0</span><br><span class="line"><span class="built_in">export</span> LD_LIBRARY_PATH=/usr/<span class="built_in">local</span>/cuda-8.0/lib64:<span class="variable">$LD_LIBRARY_PATH</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/<span class="built_in">local</span>/cuda-8.0/bin:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<p>重新载入.zshrc</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> .zshrc</span><br></pre></td></tr></table></figure>
+<h3 id="测试cuda和显卡驱动"><a href="#测试cuda和显卡驱动" class="headerlink" title="测试cuda和显卡驱动"></a>测试cuda和显卡驱动</h3><p>检查cuda的环境变量是否配置成功</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc --version</span><br></pre></td></tr></table></figure>
+<p>进入cuda代码样例(默认在用户文件夹下)检查显卡驱动是否安装成功</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /home/*/NVIDIA_CUDA-8.0_Samples/1_Utilities/deviceQuery</span><br><span class="line">make -j</span><br><span class="line">./deviceQuery</span><br></pre></td></tr></table></figure>
+<h2 id="1安装cuDNN6"><a href="#1安装cuDNN6" class="headerlink" title="1安装cuDNN6"></a>1安装cuDNN6</h2><p>安装cuDNN需要注册一个Nvidia的开发者帐号，当然也是免费的。网址<a href="https://developer.nvidia.com/rdp/cuDNN-download" target="_blank" rel="noopener">https://developer.nvidia.com/rdp/cuDNN-download</a></p>
+<p>注意要下载”Download cuDNN v6.0 (April 27, 2017), for CUDA 8.0“ ==&gt; “cuDNN v6.0 Library for Linux”</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xzvf cuDNN-8.0-linux-x64-v6.0.tgz </span><br><span class="line">sudo cp include/cuDNN.h /usr/<span class="built_in">local</span>/cuda/include/</span><br><span class="line">sudo cp lib64/* /usr/<span class="built_in">local</span>/cuda/lib64/</span><br></pre></td></tr></table></figure>
+<p>注意lib64里面其实只有两个文件，还有两个是软链接，复制后需要重新制作软链</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /usr/<span class="built_in">local</span>/cuda/lib64/</span><br><span class="line">sudo rm -rf libcuDNN.so libcuDNN.so.6</span><br><span class="line">sudo ln -s libcuDNN.so.6.0.21 libcuDNN.so.6</span><br><span class="line">sudo ln -s libcuDNN.so.6 libcuDNN.so</span><br></pre></td></tr></table></figure>
+<h2 id="2安装tensorflow"><a href="#2安装tensorflow" class="headerlink" title="2安装tensorflow"></a>2安装tensorflow</h2><p>跟着官网去安装就好了，没有什么需要配置的内容了。</p>
+<h3 id="当然先建议将apt和pypi的安装源切换到国内源"><a href="#当然先建议将apt和pypi的安装源切换到国内源" class="headerlink" title="当然先建议将apt和pypi的安装源切换到国内源"></a>当然先建议将apt和pypi的安装源切换到国内源</h3><p>个人常用的是清华的源<a href="https://mirrors.tuna.tsinghua.edu.cn/help/pypi/" target="_blank" rel="noopener">https://mirrors.tuna.tsinghua.edu.cn/help/pypi/</a></p>
+<p>当然推荐一下母校的源，虽然这个是在我毕业之后才有的。。。<a href="https://mirrors.shu.edu.cn/help/pypi.html" target="_blank" rel="noopener">https://mirrors.shu.edu.cn/help/pypi.html</a></p>
+<h3 id="安装方式纠结"><a href="#安装方式纠结" class="headerlink" title="安装方式纠结"></a>安装方式纠结</h3><p>会有人去纠结用virtualenv还是pip安装，个人的想法是如果一直都要用的可以用pip。如果是抱着试一试的心态，或是有处女座洁癖的码农可以用virtualenv，它可以创建出一个独立的python第三方库的环境。正式的一个项目或是网上下载的项目，建议还是用virtualenv，独立的环境能避免一些没必要的版本问题。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ubuntu/" rel="tag"># ubuntu</a>
+              <a href="/tags/cuda/" rel="tag"># cuda</a>
+              <a href="/tags/cudnn/" rel="tag"># cudnn</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2019-03-26-recommend-git.html" rel="next" title="为什么要用 git">
+      为什么要用 git <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">alfred.cai</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="vu1znWc0ul5fZvkVo2iwOaXoOZh5iZ6oY2xYROi_Qq4">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  
+  <link rel="stylesheet" href="/lib/animate-css/animate.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.min.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"alfredcai.cz","root":"/","scheme":"Pisces","version":"8.0.0-rc.4","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}}};
+  </script>
+
+  <meta name="description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="决策树简介">
+<meta property="og:url" content="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+<meta property="og:site_name" content="Alfred Cai">
+<meta property="og:description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-07-20T07:10:20.000Z">
+<meta property="article:modified_time" content="2020-07-09T04:02:41.786Z">
+<meta property="article:author" content="alfred.cai">
+<meta property="article:tag" content="tree-methods">
+<meta property="article:tag" content="machine-learning">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>决策树简介 | Alfred Cai</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-98280031-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-98280031-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?be494fbf9a5bda7a137b273396208824";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Alfred Cai" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line toggle-line-first"></span>
+        <span class="toggle-line toggle-line-middle"></span>
+        <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Alfred Cai</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">12</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">5</span></a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不纯度（impurity）"><span class="nav-number">1.</span> <span class="nav-text">不纯度（impurity）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#剪枝（pruning）"><span class="nav-number">2.</span> <span class="nav-text">剪枝（pruning）</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">alfred.cai</p>
+  <div class="site-description" itemprop="description">一个子虚乌有的传播介质</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/alfredcai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;alfredcai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:alfredcai@outlook.com" title="E-Mail → mailto:alfredcai@outlook.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://t.me/alfredcai" title="Telegram → https:&#x2F;&#x2F;t.me&#x2F;alfredcai" rel="noopener" target="_blank"><i class="fab fa-telegram fa-fw"></i>Telegram</a>
+      </span>
+  </div>
+
+
+
+      </section>
+        <div class="back-to-top animated">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="alfred.cai">
+      <meta itemprop="description" content="一个子虚乌有的传播介质">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Alfred Cai">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          决策树简介
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-07-20 15:10:20" itemprop="dateCreated datePublished" datetime="2019-07-20T15:10:20+08:00">2019-07-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-09 12:02:41" itemprop="dateModified" datetime="2020-07-09T12:02:41+08:00">2020-07-09</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。<br><a id="more"></a></p>
+<h2 id="不纯度（impurity）"><a href="#不纯度（impurity）" class="headerlink" title="不纯度（impurity）"></a>不纯度（impurity）</h2><p>不纯度是主衡量变量在数据集上表现的重要指标。常见的有信息增益、基尼系数（Gini index）作为特征选取的指标。</p>
+<ul>
+<li><p>信息增益：用熵（entropy）来衡量数据集、切分后的数据集中的所包含信息量。两者相减定义为信息增益，表示为特征对数据集的不纯度的减少的程度。信息增益越大说明特征具有更好的分类能力。</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+  g(D,A)    &=H(D)-H(D|A) \\
+  H(D)    &=-\sum_{k=1}^K \frac{C_k}{D} log_2(\frac{C_k}{D}) \\
+  H(D|A)    &=\sum_{i+1}^n \frac{D_i}{D} H(D_i) \\
+\end{aligned}</script><p>$g(D,A)$ 为数据集 $D$ 对特征A的信息增益；$H(D)$ 是数据集的熵；$H(D_i)$ 是数据集 $D_i$ 的熵；$H(D|A)$ 是数据集 $D$ 对特征 $A$ 的条件熵；$D_i$ 是 $D$ 中特征 $A$ 取第 $i$ 个值时的样本子集；$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数。</p>
+</li>
+<li><p>基尼系数（Gini index）：$Gini(D,A)$ 表示为数据集 $D$ 被特征 $A$ 切分后的不纯度。基尼系数越大说明当前数据集的不纯度越大。我们需要选择找到基尼系数最小的特征作为最优特征。</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+  Gini(D)    &=1-\sum_{k=1}^{K} (\frac{C_k}{D})^2 \\
+  Gini(D,A)    &=\frac{D_1}{D} Gini(D_1)+\frac{D_2}{D} Gini(D_2)
+\end{aligned}</script><p>$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数</p>
+</li>
+</ul>
+<h2 id="剪枝（pruning）"><a href="#剪枝（pruning）" class="headerlink" title="剪枝（pruning）"></a>剪枝（pruning）</h2><p>由于连续递归的切分下去，会生成一棵完全树，会存在过拟合的问题，会过分在意噪点数据。为了削弱影响，需要进行剪枝，使树变得简单一点，从而对未知数据有更准确的预测。</p>
+<ul>
+<li>基本想法是用一个损失函数去计算各个节点的误差，内部节点和他的子树的损失函数值减少的值最小的那个进行剪枝，然后用交叉验证选取最佳子树。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/tree-methods/" rel="tag"># tree-methods</a>
+              <a href="/tags/machine-learning/" rel="tag"># machine-learning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019-03-26-recommend-git.html" rel="prev" title="为什么要用 git">
+      <i class="fa fa-chevron-left"></i> 为什么要用 git
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019-08-03-build-xgboost-in-R-with-gpu-support.html" rel="next" title="在Windows环境下编译XGboost的R语言包GPU支持">
+      在Windows环境下编译XGboost的R语言包GPU支持 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">alfred.cai</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

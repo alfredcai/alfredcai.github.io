@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Alfred Cai</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://alfredcai.cz/"/>
+  <updated>2020-07-09T04:02:38.293Z</updated>
+  <id>https://alfredcai.cz/</id>
+  
+  <author>
+    <name>alfred.cai</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>buildpacks 下个时代的企业镜像打包工具</title>
+    <link href="https://alfredcai.cz/2020-07-03-buildpacks.html"/>
+    <id>https://alfredcai.cz/2020-07-03-buildpacks.html</id>
+    <published>2020-07-03T04:10:28.000Z</published>
+    <updated>2020-07-09T04:02:38.293Z</updated>
+    
+    <content type="html"><![CDATA[<p>由于中文对buildpack的介绍不是很多，于是我就来献丑了。<br><a id="more"></a></p><h2 id="发布代码的流程"><a href="#发布代码的流程" class="headerlink" title="发布代码的流程"></a>发布代码的流程</h2><ol><li>最先我们的发布流程是登陆虚拟机进入部署，不同的环境不能很好的隔离，而且开发者在本地部署的环境和运维人员在虚拟机上的环境可能也会有细微的差别，又需要一段时间的沟通。</li><li>后来有了docker的发布，能在同一台机器上隔离多个运行环境。并且能保证开发和运行环境一致。运维终于可以把锅甩回给了开发自己。</li></ol><h2 id="那么buildpack是开解决什么问题的呢？"><a href="#那么buildpack是开解决什么问题的呢？" class="headerlink" title="那么buildpack是开解决什么问题的呢？"></a>那么buildpack是开解决什么问题的呢？</h2><p>现在微服务流行后，一个网站后端可能有数十个微服务的应用在运行。应用基本上是在统一的框架下编写不同业务逻辑代码。此时，dockerfile这个文件就会显得比较的累赘。数十个服务的dockerfile几乎都是复制黏贴到项目中。dockerfile中大部分内容的负责人应该是框架编写者而不是写业务代码的CURD boys。并且后续由于框架的升级对镜像的更新也需要去改写数十个项目的dockerfile。实在太繁琐了。</p><p>buildpacks也就由此流行起来了。他抛弃了dockerfile里对环境的具体操作，而是改成了一种描述性的表达。而具体要的环境又交回给了运维。</p><h2 id="如何使用-buildpacks"><a href="#如何使用-buildpacks" class="headerlink" title="如何使用 buildpacks"></a>如何使用 buildpacks</h2><h3 id="打包代码"><a href="#打包代码" class="headerlink" title="打包代码"></a>打包代码</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">pack build my-app</span><br><span class="line">    --path ~/codes/my-app</span><br><span class="line">    --run-image cloudfoundry/run:base-cnb</span><br><span class="line">    --buildpack org.cloudfoundry.openjdk</span><br><span class="line">    --buildpack org.cloudfoundry.buildsystem</span><br><span class="line">    --buildpack org.cloudfoundry.jvmapplication</span><br><span class="line">    --buildpack org.cloudfoundry.tomcat</span><br><span class="line">    --buildpack org.cloudfoundry.springboot</span><br><span class="line">    --buildpack org.cloudfoundry.distzip</span><br><span class="line">    --buildpack org.cloudfoundry.springautoreconfiguration</span><br></pre></td></tr></table></figure><ul><li>pack 命令行</li><li>my-app 打包的镜像名</li><li>path 代码目录</li><li>run-image 项目运行时的基础镜像</li><li>buildpack 一系列预先定义好的编译和运行程序</li></ul><p>为了简化代码，buildpacks又定义了一个builder的概念。builder里包含了一系列 buildpack，build-image（编译镜像）和 run-image（运行镜像）。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack build my-app --builder cloudfoundry/cnb:bionic</span><br></pre></td></tr></table></figure></p><h3 id="选择可用的builder"><a href="#选择可用的builder" class="headerlink" title="选择可用的builder"></a>选择可用的builder</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack suggest-builders</span><br></pre></td></tr></table></figure><h3 id="查看-builder-所包含的buildpack-和其顺序"><a href="#查看-builder-所包含的buildpack-和其顺序" class="headerlink" title="查看 builder 所包含的buildpack 和其顺序"></a>查看 builder 所包含的buildpack 和其顺序</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack inspect-builder gcr.io/buildpacks/builder</span><br></pre></td></tr></table></figure><h2 id="buildpacks-具体做了什么事情"><a href="#buildpacks-具体做了什么事情" class="headerlink" title="buildpacks 具体做了什么事情"></a>buildpacks 具体做了什么事情</h2><p>buildpack一共有五个生命周期阶段</p><ul><li>detect 发现项目语言，找到一系列的buildpack</li><li>analysis 分析文件，重用之前image layer</li><li>restore 设置缓存</li><li>build 执行buildpack文件打包文件创建image</li><li>export 导出到docker或者远端镜像</li></ul><p>五个步骤就是buildpack的打包的全过程了。</p><p>detect会去查找项目例如package.json, pom.xml, </p><p>build.gradle来判断项目是用什么编程语言来选择buildpack文件到layers目录下。</p><p>analysis,resore 用于缓存image layer，metadata等信息加速打包过程。</p><p>build 执行buildpack打包镜像。 </p><p>export 发布镜像。</p><h2 id="buildpacks-历史"><a href="#buildpacks-历史" class="headerlink" title="buildpacks 历史"></a>buildpacks 历史</h2><p>buildpacks 最早是Heroku公司在2011推出的。Heroku公司也是现在支持编程语言最多的。2018，Pivotal和Heroku公司共同定义了buildpacks协议，推出了Cloud Native Buildpacks(CNB)。至此已经有很多公司推出了buildpacks builder镜像了。例如<a href="">google</a>, <a href="https://paketo.io/">paketo</a>, <a href="https://docs.cloudfoundry.org/buildpacks/" target="_blank" rel="noopener">Cloud Foundry</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Google:                gcr.io&#x2F;buildpacks&#x2F;builder                    Ubuntu 18 base image with buildpacks for .NET, Go, Java, Node.js, and Python</span><br><span class="line">Heroku:                heroku&#x2F;buildpacks:18                         heroku-18 base image with buildpacks for Ruby, Java, Node.js, Python, Golang, &amp; PHP</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:base        Ubuntu bionic base image with buildpacks for Java, NodeJS and Golang</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:full-cf     cflinuxfs3 base image with buildpacks for Java, .NET, NodeJS, Golang, PHP, HTTPD and NGINX</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:tiny        Tiny base image (bionic build image, distroless run image) with buildpacks for Golang</span><br></pre></td></tr></table></figure></p><h2 id="buildpacks协议规范"><a href="#buildpacks协议规范" class="headerlink" title="buildpacks协议规范"></a>buildpacks协议规范</h2><p><a href="https://github.com/buildpacks/spec/blob/main/buildpack.md" target="_blank" rel="noopener">https://github.com/buildpacks/spec/blob/main/buildpack.md</a></p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;由于中文对buildpack的介绍不是很多，于是我就来献丑了。&lt;br&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="buildpacks" scheme="https://alfredcai.cz/tags/buildpacks/"/>
+    
+      <category term="docker" scheme="https://alfredcai.cz/tags/docker/"/>
+    
+      <category term="CI/CD" scheme="https://alfredcai.cz/tags/CI-CD/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>在Windows环境下编译XGboost的R语言包GPU支持</title>
+    <link href="https://alfredcai.cz/2019-08-03-build-xgboost-in-R-with-gpu-support.html"/>
+    <id>https://alfredcai.cz/2019-08-03-build-xgboost-in-R-with-gpu-support.html</id>
+    <published>2019-08-03T03:39:43.000Z</published>
+    <updated>2020-07-09T04:02:33.711Z</updated>
+    
+    <content type="html"><![CDATA[<p>由于XGboost的R包并没有对GPU的支持，而我又一定要用R语言，刚好官网上提供了自己编译能让R包支持CUDA。自己在学习实践XGboost时，想用他和随机森林的方法进行比较，需要构建大量的树，用上GPU希望能加快训练速度。但是编译的过程十分的痛苦，记录一下也许可以对别人有所帮助。<br><a id="more"></a></p><h2 id="环境介绍"><a href="#环境介绍" class="headerlink" title="环境介绍"></a>环境介绍</h2><ul><li>Windows 10 1903</li><li>R 3.6.1</li><li>Rtools 35</li><li>Visual Studio 2019</li><li>CMake</li><li>cuda 10.1，这次编译使得xgboost能用上cuda 10.1版本</li></ul><h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><ol><li>下载代码到本地，包括它所用到的三个其他项目（rabit、dmlc-core、cub）</li></ol><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> --recursive https://github.com/dmlc/xgboost  </span><br><span class="line"><span class="built_in">cd</span> xgboost</span><br></pre></td></tr></table></figure><ol><li><p>用Visual Studio 2019打开项目，在他的CMake setting里的CMake command arguments里写入 <code>\-DUSE\_CUDA=ON -DR\_LIB=ON</code></p><ul><li>如果你遇到了<a href="#LIBR-LIB-DIR">LIBR_LIB_DIR was not set</a> 或是<a href="#INTERFACE-INCLUDE-DIRECTORIES">INTERFACE_INCLUDE_DIRECTORIES property contains path</a> 问题，你需要多加一些参数，最后的命令会是：<code>\-DUSE\_CUDA=ON -DR\_LIB=ON -DLIBR\_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot; -DCMAKE\_INSTALL\_PREFIX=&quot;C:/Program Files (x86)/xgboost&quot;</code>  </li><li><p>Visual Studio 里的Build Root与官方文档不一致，我就选择了它默认的<code>${projectDir}\out\build\${name}</code></p></li><li><p>如果你用命令行下的cmake的话，cuda 10.1 版本的机器会提示没有找到nvcc，所以我自己尝试下来只能在Visual Studio图形化界面下操作</p></li></ul></li><li><p>选择<code>Build &gt; Build ALL</code>进行编译，等待编译完成后再点击<code>Build &gt; install xgboost</code>它会自动帮你安装R包，结束后就可以打开RStudio进行测试了。</p><ul><li>或者你也可以在开始菜单里找到Visual Studio下的命令行，执行<code>cmake --build . --target install --config Release</code>进行编译，编译完成后它会自动安装R包。结束后可以打开RStudio进行测试。两者做的同一件事，只是操作不一样，看个人喜好吧。</li></ul></li><li><p>python版的安装，需要回到主目录下的<code>python-package</code>进行安装，安装完后可以用自带的测试程序进行测试是否安装成功</p></li></ol><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> python-package  </span><br><span class="line">python setup.py install  </span><br><span class="line">python ..\\tests\\benchmark\\benchmark\_tree.py --tree\_method <span class="string">"gpu\_hist"</span> --iterations 10  </span><br><span class="line">python ..\\tests\\benchmark\\benchmark\_tree.py --tree\_method <span class="string">"hist"</span> --iterations 10</span><br></pre></td></tr></table></figure><h2 id="可能遇到的问题"><a href="#可能遇到的问题" class="headerlink" title="可能遇到的问题"></a>可能遇到的问题</h2><p>由于我的CMake是用Visual Studio下载的，是内嵌在里面的，用起来不是很方便但是还可以用用。如果想用cmake的命令行，可以在开始菜单里找到Visual Studio 2019的文件夹下X64 Native Tools Cammand Prompt for VS 2019.</p><h3 id="LIBR-LIB-DIR"><a href="#LIBR-LIB-DIR" class="headerlink" title="LIBR_LIB_DIR"></a>LIBR_LIB_DIR</h3><blockquote><p>CMake Error at cmake/modules/FindLibR.cmake:44 (message): LIBR_LIB_DIR was not set!</p></blockquote><p>这是因为R语言没有添加到系统环境里，可以在执行cmake的时候指定R语言的目录<code>-DLIBR_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot;</code></p><h3 id="INTERFACE-INCLUDE-DIRECTORIES"><a href="#INTERFACE-INCLUDE-DIRECTORIES" class="headerlink" title="INTERFACE_INCLUDE_DIRECTORIES"></a>INTERFACE_INCLUDE_DIRECTORIES</h3><blockquote><p>CMake Error in C:\Users\alfre\Documents\CodeProjects\GithubProjects\xgboost\CMakeLists.txt:<br>Target “xgboost” INTERFACE_INCLUDE_DIRECTORIES property contains path:<br>“C:/Users/alfred/Documents/CodeProjects/GithubProjects/xgboost/out/install/x64-Debug/include”<br>which is prefixed in the source directory.</p></blockquote><p>这个报错是在Visual Studio生成配置文件时出现的，对比了用命令行生成的文件，发现是z指定到了<code>&quot;C:/Program Files (x86)/xgboost&quot;</code>，如果遇到的朋友可以在参数里再加一条<code>-DCMAKE_INSTALL_PREFIX=&quot;C:/Program Files (x86)/xgboost&quot;</code>， 编译结束之后cmake也没生成<code>C:/Program Files (x86)/xgboost</code>文件夹。</p><h3 id="gendef-file-or-dlltool-file"><a href="#gendef-file-or-dlltool-file" class="headerlink" title="gendef file or dlltool file"></a>gendef file or dlltool file</h3><p>这问题是由于没有没有安装Rtools导致的，奇怪的是，安装程序它会把<code>C:\Rtools\bin</code>添加到系统环境里，但是xgboost用到的两个程序其实是在Rtools所提供的mingw里，也就是说你要自己将<code>C:\Rtools\mingw_64\bin</code>添加到系统环境里的PATH变量里。我一开始以为我安装时取消勾选里这个选项，但是没有添加到环境变量里，但是后来又重装了一遍才发现其实是Rtools自己的问题。</p><h3 id="cuda版本问题"><a href="#cuda版本问题" class="headerlink" title="cuda版本问题"></a>cuda版本问题</h3><p>cuda版本问题永远在你身边！每次拿到新电脑，都是先装cuda再去安装TensorFlow，numpy等等软件包的，你会发现大家的cuda版本都是nvidia出的慢半个版本，导致你会在自己编译还是重装cuda中纠结。而且各家活跃度不一样使得对cuda支持的版本都不一样，所以在问题会不停的出现纠结花好久才解决。<br>这次也是，如果根据官网的文档，在命令行下运行cmake（<code>cmake .. -G&quot;Visual Studio 16 2019&quot; -DUSE_CUDA=ON -DR_LIB=ON -DLIBR_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot;</code>）会出现报错，发现官方支持到cuda10.0。但是！如果用Visual Studio打开项目，用Visual Studio去生成缓存文件，发现并不会报错，能让xgboost支持cuda10.1。最近新买电脑的朋友的可以注意下了，装cuda10.1也没问题。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;由于XGboost的R包并没有对GPU的支持，而我又一定要用R语言，刚好官网上提供了自己编译能让R包支持CUDA。自己在学习实践XGboost时，想用他和随机森林的方法进行比较，需要构建大量的树，用上GPU希望能加快训练速度。但是编译的过程十分的痛苦，记录一下也许可以对别人有所帮助。&lt;br&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="cuda" scheme="https://alfredcai.cz/tags/cuda/"/>
+    
+      <category term="machine-learning" scheme="https://alfredcai.cz/tags/machine-learning/"/>
+    
+      <category term="xgboost" scheme="https://alfredcai.cz/tags/xgboost/"/>
+    
+      <category term="R-package" scheme="https://alfredcai.cz/tags/R-package/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>决策树简介</title>
+    <link href="https://alfredcai.cz/2019-07-20-decsion-tree.html"/>
+    <id>https://alfredcai.cz/2019-07-20-decsion-tree.html</id>
+    <published>2019-07-20T07:10:20.000Z</published>
+    <updated>2020-07-09T04:02:41.786Z</updated>
+    
+    <content type="html"><![CDATA[<p>决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。<br><a id="more"></a></p><h2 id="不纯度（impurity）"><a href="#不纯度（impurity）" class="headerlink" title="不纯度（impurity）"></a>不纯度（impurity）</h2><p>不纯度是主衡量变量在数据集上表现的重要指标。常见的有信息增益、基尼系数（Gini index）作为特征选取的指标。</p><ul><li><p>信息增益：用熵（entropy）来衡量数据集、切分后的数据集中的所包含信息量。两者相减定义为信息增益，表示为特征对数据集的不纯度的减少的程度。信息增益越大说明特征具有更好的分类能力。</p><script type="math/tex; mode=display">\begin{aligned}  g(D,A)    &=H(D)-H(D|A) \\  H(D)    &=-\sum_{k=1}^K \frac{C_k}{D} log_2(\frac{C_k}{D}) \\  H(D|A)    &=\sum_{i+1}^n \frac{D_i}{D} H(D_i) \\\end{aligned}</script><p>$g(D,A)$ 为数据集 $D$ 对特征A的信息增益；$H(D)$ 是数据集的熵；$H(D_i)$ 是数据集 $D_i$ 的熵；$H(D|A)$ 是数据集 $D$ 对特征 $A$ 的条件熵；$D_i$ 是 $D$ 中特征 $A$ 取第 $i$ 个值时的样本子集；$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数。</p></li><li><p>基尼系数（Gini index）：$Gini(D,A)$ 表示为数据集 $D$ 被特征 $A$ 切分后的不纯度。基尼系数越大说明当前数据集的不纯度越大。我们需要选择找到基尼系数最小的特征作为最优特征。</p><script type="math/tex; mode=display">\begin{aligned}  Gini(D)    &=1-\sum_{k=1}^{K} (\frac{C_k}{D})^2 \\  Gini(D,A)    &=\frac{D_1}{D} Gini(D_1)+\frac{D_2}{D} Gini(D_2)\end{aligned}</script><p>$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数</p></li></ul><h2 id="剪枝（pruning）"><a href="#剪枝（pruning）" class="headerlink" title="剪枝（pruning）"></a>剪枝（pruning）</h2><p>由于连续递归的切分下去，会生成一棵完全树，会存在过拟合的问题，会过分在意噪点数据。为了削弱影响，需要进行剪枝，使树变得简单一点，从而对未知数据有更准确的预测。</p><ul><li>基本想法是用一个损失函数去计算各个节点的误差，内部节点和他的子树的损失函数值减少的值最小的那个进行剪枝，然后用交叉验证选取最佳子树。</li></ul>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。&lt;br&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="tree-methods" scheme="https://alfredcai.cz/tags/tree-methods/"/>
+    
+      <category term="machine-learning" scheme="https://alfredcai.cz/tags/machine-learning/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>为什么要用 git</title>
+    <link href="https://alfredcai.cz/2019-03-26-recommend-git.html"/>
+    <id>https://alfredcai.cz/2019-03-26-recommend-git.html</id>
+    <published>2019-03-25T16:00:00.000Z</published>
+    <updated>2020-07-09T04:03:33.649Z</updated>
+    
+    <content type="html"><![CDATA[<p>很多朋友包括我，一提起 git 首先想到的是 GitHub，以及 GitHub 后面所代表的丰富的社区和代码分享。但是我今天想说的是，即使你的代码甚至是文件不是准备用来分享的，也推荐使用 git。<br><a id="more"></a></p><h2 id="版本控制"><a href="#版本控制" class="headerlink" title="版本控制"></a>版本控制</h2><p>现在在个人的 vps 上，我的文件夹都会在本地布置一个 git 作为版本控制。因为 git 帮我解决了一下的问题：</p><ul><li>两次登录时间间隔太长，上次登录所操作的文件已经不记得了。我用 <code>git commit</code> 中记录本次操作的大致内容和想法，<code>git log</code> 来查看之前的操作。</li><li>服务器上的文件修改会直接影响到许多正在运行的系统，每次操作都需要进行备份和回滚。git 同样可以实现这一点，<code>git commit</code>在我看来相当于对文件进行快照，在紧急情况下，可以回滚到之前的提交，并且还能保留当前未保存的文件，确认清楚后再重新提交</li></ul><h2 id="文件对比-diff"><a href="#文件对比-diff" class="headerlink" title="文件对比 diff"></a>文件对比 diff</h2><p>不管是在服务器上还是本地文件，相同文件的个别地方差异总是让人很难过，找起来也很恼人。Word 等二进制文件没办法，只能通过网页版的 diff online 进行查找，但是对于纯文本类型的文件，可以直接在命令行下进行比较，许多的文档编辑器也支持按行比较，方便而且直观。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;很多朋友包括我，一提起 git 首先想到的是 GitHub，以及 GitHub 后面所代表的丰富的社区和代码分享。但是我今天想说的是，即使你的代码甚至是文件不是准备用来分享的，也推荐使用 git。&lt;br&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="git" scheme="https://alfredcai.cz/tags/git/"/>
+    
+      <category term="vps" scheme="https://alfredcai.cz/tags/vps/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>在Ubuntu16.04上安装Cuda 8.0和 cuDNN 6.0</title>
+    <link href="https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html"/>
+    <id>https://alfredcai.cz/2017-12-24-ubuntu16-04-install-cuda8-cudnn6-tensorflow.html</id>
+    <published>2017-12-24T15:38:58.000Z</published>
+    <updated>2020-07-09T04:03:28.209Z</updated>
+    
+    <content type="html"><![CDATA[<p>安装tensorflow教程较多较杂，于是自己记录了一份。<br><a id="more"></a><br>由于现在Nvidia的cuda已经默认是9.0版本了，但是tensorflow还是只支持到cuda8和 cuDNN6。所以本教程也是根据tensorflow选择了老版本。</p><ul><li>系统版本：Ubuntu-GNOME 16.04</li><li>显卡：Nviida 1070Ti</li></ul><h2 id="0安装-cuda8-0"><a href="#0安装-cuda8-0" class="headerlink" title="0安装 cuda8.0"></a>0安装 cuda8.0</h2><p>很多教程都是先安装显卡驱动，再运行.run 文件的。在自己安装了几次之后个人还是喜欢下载.deb 文件，包管理器会自动安装显卡驱动的。</p><p>官网默认是cuda9，所以需要在<a href="https://developer.nvidia.com/cuda-toolkit-archive" target="_blank" rel="noopener">https://developer.nvidia.com/cuda-toolkit-archive</a>找到8.0版本。<br>我们就点 cuda-80-ga2 ==&gt; Linux ==&gt; x86_64 ==&gt; 16.04 ==&gt; deb(local) 或者 deb(network)<br>下载“cuda-repo-ubuntu1604_8.0.61-1_amd64.deb”</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install cuda-8-0</span><br></pre></td></tr></table></figure><p>注意，其他教程里写的都是install cuda，但是我们不是安装最新的cuda，要选择成cuda-8-0</p><p>安装好之后建议重启一下，因为显卡驱动必须重启一下还能正常使用</p><h3 id="配置cuda"><a href="#配置cuda" class="headerlink" title="配置cuda"></a>配置cuda</h3><p>我用的是zsh，所以是在.zshrc 里配置。默认的是bash，只需把.zshrc改成.bashrc就行了</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano .zshrc</span><br></pre></td></tr></table></figure><p>在.zshrc的最前面写入环境变量的配置</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> CUDA_HOME=/usr/<span class="built_in">local</span>/cuda-8.0</span><br><span class="line"><span class="built_in">export</span> LD_LIBRARY_PATH=/usr/<span class="built_in">local</span>/cuda-8.0/lib64:<span class="variable">$LD_LIBRARY_PATH</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/<span class="built_in">local</span>/cuda-8.0/bin:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure><p>重新载入.zshrc</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> .zshrc</span><br></pre></td></tr></table></figure><h3 id="测试cuda和显卡驱动"><a href="#测试cuda和显卡驱动" class="headerlink" title="测试cuda和显卡驱动"></a>测试cuda和显卡驱动</h3><p>检查cuda的环境变量是否配置成功</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc --version</span><br></pre></td></tr></table></figure><p>进入cuda代码样例(默认在用户文件夹下)检查显卡驱动是否安装成功</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /home/*/NVIDIA_CUDA-8.0_Samples/1_Utilities/deviceQuery</span><br><span class="line">make -j</span><br><span class="line">./deviceQuery</span><br></pre></td></tr></table></figure><h2 id="1安装cuDNN6"><a href="#1安装cuDNN6" class="headerlink" title="1安装cuDNN6"></a>1安装cuDNN6</h2><p>安装cuDNN需要注册一个Nvidia的开发者帐号，当然也是免费的。网址<a href="https://developer.nvidia.com/rdp/cuDNN-download" target="_blank" rel="noopener">https://developer.nvidia.com/rdp/cuDNN-download</a></p><p>注意要下载”Download cuDNN v6.0 (April 27, 2017), for CUDA 8.0“ ==&gt; “cuDNN v6.0 Library for Linux”</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xzvf cuDNN-8.0-linux-x64-v6.0.tgz </span><br><span class="line">sudo cp include/cuDNN.h /usr/<span class="built_in">local</span>/cuda/include/</span><br><span class="line">sudo cp lib64/* /usr/<span class="built_in">local</span>/cuda/lib64/</span><br></pre></td></tr></table></figure><p>注意lib64里面其实只有两个文件，还有两个是软链接，复制后需要重新制作软链</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /usr/<span class="built_in">local</span>/cuda/lib64/</span><br><span class="line">sudo rm -rf libcuDNN.so libcuDNN.so.6</span><br><span class="line">sudo ln -s libcuDNN.so.6.0.21 libcuDNN.so.6</span><br><span class="line">sudo ln -s libcuDNN.so.6 libcuDNN.so</span><br></pre></td></tr></table></figure><h2 id="2安装tensorflow"><a href="#2安装tensorflow" class="headerlink" title="2安装tensorflow"></a>2安装tensorflow</h2><p>跟着官网去安装就好了，没有什么需要配置的内容了。</p><h3 id="当然先建议将apt和pypi的安装源切换到国内源"><a href="#当然先建议将apt和pypi的安装源切换到国内源" class="headerlink" title="当然先建议将apt和pypi的安装源切换到国内源"></a>当然先建议将apt和pypi的安装源切换到国内源</h3><p>个人常用的是清华的源<a href="https://mirrors.tuna.tsinghua.edu.cn/help/pypi/" target="_blank" rel="noopener">https://mirrors.tuna.tsinghua.edu.cn/help/pypi/</a></p><p>当然推荐一下母校的源，虽然这个是在我毕业之后才有的。。。<a href="https://mirrors.shu.edu.cn/help/pypi.html" target="_blank" rel="noopener">https://mirrors.shu.edu.cn/help/pypi.html</a></p><h3 id="安装方式纠结"><a href="#安装方式纠结" class="headerlink" title="安装方式纠结"></a>安装方式纠结</h3><p>会有人去纠结用virtualenv还是pip安装，个人的想法是如果一直都要用的可以用pip。如果是抱着试一试的心态，或是有处女座洁癖的码农可以用virtualenv，它可以创建出一个独立的python第三方库的环境。正式的一个项目或是网上下载的项目，建议还是用virtualenv，独立的环境能避免一些没必要的版本问题。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;安装tensorflow教程较多较杂，于是自己记录了一份。&lt;br&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="ubuntu" scheme="https://alfredcai.cz/tags/ubuntu/"/>
+    
+      <category term="cuda" scheme="https://alfredcai.cz/tags/cuda/"/>
+    
+      <category term="cudnn" scheme="https://alfredcai.cz/tags/cudnn/"/>
+    
+  </entry>
+  
+</feed>
