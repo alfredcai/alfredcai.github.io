@@ -7,8 +7,8 @@ tags:
  - cudnn
 author: alfred.cai
 ---
-
-安装rensorflow教程较多较杂，于是自己记录了一份。
+安装tensorflow教程较多较杂，于是自己记录了一份。
+<!-- more -->
 由于现在Nvidia的cuda已经默认是9.0版本了，但是tensorflow还是只支持到cuda8和 cuDNN6。所以本教程也是根据tensorflow选择了老版本。
 
 - 系统版本：Ubuntu-GNOME 16.04

@@ -25,21 +25,22 @@
     var CONFIG = {"hostname":"alfredcai.cz","root":"/","scheme":"Pisces","version":"8.0.0-rc.4","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}}};
   </script>
 
-  <meta name="description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+  <meta name="description" content="由于中文对buildpack的介绍不是很多，于是我就来献丑了。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="决策树简介">
-<meta property="og:url" content="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+<meta property="og:title" content="buildpacks 下个时代的企业镜像打包工具">
+<meta property="og:url" content="https://alfredcai.cz/2020-07-03-buildpacks.html">
 <meta property="og:site_name" content="Alfred Cai">
-<meta property="og:description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+<meta property="og:description" content="由于中文对buildpack的介绍不是很多，于是我就来献丑了。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2019-07-20T07:10:20.000Z">
-<meta property="article:modified_time" content="2020-07-09T04:02:41.786Z">
+<meta property="article:published_time" content="2020-07-03T04:10:28.000Z">
+<meta property="article:modified_time" content="2020-07-09T04:02:38.293Z">
 <meta property="article:author" content="alfred.cai">
-<meta property="article:tag" content="tree-methods">
-<meta property="article:tag" content="machine-learning">
+<meta property="article:tag" content="buildpacks">
+<meta property="article:tag" content="docker">
+<meta property="article:tag" content="CI&#x2F;CD">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+<link rel="canonical" href="https://alfredcai.cz/2020-07-03-buildpacks.html">
 
 
 <script class="page-configurations">
@@ -52,7 +53,7 @@
   };
 </script>
 
-  <title>决策树简介 | Alfred Cai</title>
+  <title>buildpacks 下个时代的企业镜像打包工具 | Alfred Cai</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-98280031-1"></script>
     <script>
@@ -199,7 +200,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不纯度（impurity）"><span class="nav-number">1.</span> <span class="nav-text">不纯度（impurity）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#剪枝（pruning）"><span class="nav-number">2.</span> <span class="nav-text">剪枝（pruning）</span></a></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#发布代码的流程"><span class="nav-number">1.</span> <span class="nav-text">发布代码的流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#那么buildpack是开解决什么问题的呢？"><span class="nav-number">2.</span> <span class="nav-text">那么buildpack是开解决什么问题的呢？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何使用-buildpacks"><span class="nav-number">3.</span> <span class="nav-text">如何使用 buildpacks</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#打包代码"><span class="nav-number">3.1.</span> <span class="nav-text">打包代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#选择可用的builder"><span class="nav-number">3.2.</span> <span class="nav-text">选择可用的builder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看-builder-所包含的buildpack-和其顺序"><span class="nav-number">3.3.</span> <span class="nav-text">查看 builder 所包含的buildpack 和其顺序</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#buildpacks-具体做了什么事情"><span class="nav-number">4.</span> <span class="nav-text">buildpacks 具体做了什么事情</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#buildpacks-历史"><span class="nav-number">5.</span> <span class="nav-text">buildpacks 历史</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#buildpacks协议规范"><span class="nav-number">6.</span> <span class="nav-text">buildpacks协议规范</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -268,7 +269,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2020-07-03-buildpacks.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -281,7 +282,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          决策树简介
+          buildpacks 下个时代的企业镜像打包工具
         </h1>
 
         <div class="post-meta">
@@ -291,14 +292,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2019-07-20 15:10:20" itemprop="dateCreated datePublished" datetime="2019-07-20T15:10:20+08:00">2019-07-20</time>
+              <time title="创建时间：2020-07-03 12:10:28" itemprop="dateCreated datePublished" datetime="2020-07-03T12:10:28+08:00">2020-07-03</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-07-09 12:02:41" itemprop="dateModified" datetime="2020-07-09T12:02:41+08:00">2020-07-09</time>
+                <time title="修改时间：2020-07-09 12:02:38" itemprop="dateModified" datetime="2020-07-09T12:02:38+08:00">2020-07-09</time>
               </span>
 
           
@@ -312,29 +313,40 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。<br><a id="more"></a></p>
-<h2 id="不纯度（impurity）"><a href="#不纯度（impurity）" class="headerlink" title="不纯度（impurity）"></a>不纯度（impurity）</h2><p>不纯度是主衡量变量在数据集上表现的重要指标。常见的有信息增益、基尼系数（Gini index）作为特征选取的指标。</p>
+        <p>由于中文对buildpack的介绍不是很多，于是我就来献丑了。<br><a id="more"></a></p>
+<h2 id="发布代码的流程"><a href="#发布代码的流程" class="headerlink" title="发布代码的流程"></a>发布代码的流程</h2><ol>
+<li>最先我们的发布流程是登陆虚拟机进入部署，不同的环境不能很好的隔离，而且开发者在本地部署的环境和运维人员在虚拟机上的环境可能也会有细微的差别，又需要一段时间的沟通。</li>
+<li>后来有了docker的发布，能在同一台机器上隔离多个运行环境。并且能保证开发和运行环境一致。运维终于可以把锅甩回给了开发自己。</li>
+</ol>
+<h2 id="那么buildpack是开解决什么问题的呢？"><a href="#那么buildpack是开解决什么问题的呢？" class="headerlink" title="那么buildpack是开解决什么问题的呢？"></a>那么buildpack是开解决什么问题的呢？</h2><p>现在微服务流行后，一个网站后端可能有数十个微服务的应用在运行。应用基本上是在统一的框架下编写不同业务逻辑代码。此时，dockerfile这个文件就会显得比较的累赘。数十个服务的dockerfile几乎都是复制黏贴到项目中。dockerfile中大部分内容的负责人应该是框架编写者而不是写业务代码的CURD boys。并且后续由于框架的升级对镜像的更新也需要去改写数十个项目的dockerfile。实在太繁琐了。</p>
+<p>buildpacks也就由此流行起来了。他抛弃了dockerfile里对环境的具体操作，而是改成了一种描述性的表达。而具体要的环境又交回给了运维。</p>
+<h2 id="如何使用-buildpacks"><a href="#如何使用-buildpacks" class="headerlink" title="如何使用 buildpacks"></a>如何使用 buildpacks</h2><h3 id="打包代码"><a href="#打包代码" class="headerlink" title="打包代码"></a>打包代码</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">pack build my-app</span><br><span class="line">    --path ~/codes/my-app</span><br><span class="line">    --run-image cloudfoundry/run:base-cnb</span><br><span class="line">    --buildpack org.cloudfoundry.openjdk</span><br><span class="line">    --buildpack org.cloudfoundry.buildsystem</span><br><span class="line">    --buildpack org.cloudfoundry.jvmapplication</span><br><span class="line">    --buildpack org.cloudfoundry.tomcat</span><br><span class="line">    --buildpack org.cloudfoundry.springboot</span><br><span class="line">    --buildpack org.cloudfoundry.distzip</span><br><span class="line">    --buildpack org.cloudfoundry.springautoreconfiguration</span><br></pre></td></tr></table></figure>
 <ul>
-<li><p>信息增益：用熵（entropy）来衡量数据集、切分后的数据集中的所包含信息量。两者相减定义为信息增益，表示为特征对数据集的不纯度的减少的程度。信息增益越大说明特征具有更好的分类能力。</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-  g(D,A)    &=H(D)-H(D|A) \\
-  H(D)    &=-\sum_{k=1}^K \frac{C_k}{D} log_2(\frac{C_k}{D}) \\
-  H(D|A)    &=\sum_{i+1}^n \frac{D_i}{D} H(D_i) \\
-\end{aligned}</script><p>$g(D,A)$ 为数据集 $D$ 对特征A的信息增益；$H(D)$ 是数据集的熵；$H(D_i)$ 是数据集 $D_i$ 的熵；$H(D|A)$ 是数据集 $D$ 对特征 $A$ 的条件熵；$D_i$ 是 $D$ 中特征 $A$ 取第 $i$ 个值时的样本子集；$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数。</p>
-</li>
-<li><p>基尼系数（Gini index）：$Gini(D,A)$ 表示为数据集 $D$ 被特征 $A$ 切分后的不纯度。基尼系数越大说明当前数据集的不纯度越大。我们需要选择找到基尼系数最小的特征作为最优特征。</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-  Gini(D)    &=1-\sum_{k=1}^{K} (\frac{C_k}{D})^2 \\
-  Gini(D,A)    &=\frac{D_1}{D} Gini(D_1)+\frac{D_2}{D} Gini(D_2)
-\end{aligned}</script><p>$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数</p>
-</li>
+<li>pack 命令行</li>
+<li>my-app 打包的镜像名</li>
+<li>path 代码目录</li>
+<li>run-image 项目运行时的基础镜像</li>
+<li>buildpack 一系列预先定义好的编译和运行程序</li>
 </ul>
-<h2 id="剪枝（pruning）"><a href="#剪枝（pruning）" class="headerlink" title="剪枝（pruning）"></a>剪枝（pruning）</h2><p>由于连续递归的切分下去，会生成一棵完全树，会存在过拟合的问题，会过分在意噪点数据。为了削弱影响，需要进行剪枝，使树变得简单一点，从而对未知数据有更准确的预测。</p>
+<p>为了简化代码，buildpacks又定义了一个builder的概念。builder里包含了一系列 buildpack，build-image（编译镜像）和 run-image（运行镜像）。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack build my-app --builder cloudfoundry/cnb:bionic</span><br></pre></td></tr></table></figure></p>
+<h3 id="选择可用的builder"><a href="#选择可用的builder" class="headerlink" title="选择可用的builder"></a>选择可用的builder</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack suggest-builders</span><br></pre></td></tr></table></figure>
+<h3 id="查看-builder-所包含的buildpack-和其顺序"><a href="#查看-builder-所包含的buildpack-和其顺序" class="headerlink" title="查看 builder 所包含的buildpack 和其顺序"></a>查看 builder 所包含的buildpack 和其顺序</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pack inspect-builder gcr.io/buildpacks/builder</span><br></pre></td></tr></table></figure>
+<h2 id="buildpacks-具体做了什么事情"><a href="#buildpacks-具体做了什么事情" class="headerlink" title="buildpacks 具体做了什么事情"></a>buildpacks 具体做了什么事情</h2><p>buildpack一共有五个生命周期阶段</p>
 <ul>
-<li>基本想法是用一个损失函数去计算各个节点的误差，内部节点和他的子树的损失函数值减少的值最小的那个进行剪枝，然后用交叉验证选取最佳子树。</li>
+<li>detect 发现项目语言，找到一系列的buildpack</li>
+<li>analysis 分析文件，重用之前image layer</li>
+<li>restore 设置缓存</li>
+<li>build 执行buildpack文件打包文件创建image</li>
+<li>export 导出到docker或者远端镜像</li>
 </ul>
+<p>五个步骤就是buildpack的打包的全过程了。</p>
+<p>detect会去查找项目例如package.json, pom.xml, </p>
+<p>build.gradle来判断项目是用什么编程语言来选择buildpack文件到layers目录下。</p>
+<p>analysis,resore 用于缓存image layer，metadata等信息加速打包过程。</p>
+<p>build 执行buildpack打包镜像。 </p>
+<p>export 发布镜像。</p>
+<h2 id="buildpacks-历史"><a href="#buildpacks-历史" class="headerlink" title="buildpacks 历史"></a>buildpacks 历史</h2><p>buildpacks 最早是Heroku公司在2011推出的。Heroku公司也是现在支持编程语言最多的。2018，Pivotal和Heroku公司共同定义了buildpacks协议，推出了Cloud Native Buildpacks(CNB)。至此已经有很多公司推出了buildpacks builder镜像了。例如<a href="">google</a>, <a href="https://paketo.io/">paketo</a>, <a href="https://docs.cloudfoundry.org/buildpacks/" target="_blank" rel="noopener">Cloud Foundry</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Google:                gcr.io&#x2F;buildpacks&#x2F;builder                    Ubuntu 18 base image with buildpacks for .NET, Go, Java, Node.js, and Python</span><br><span class="line">Heroku:                heroku&#x2F;buildpacks:18                         heroku-18 base image with buildpacks for Ruby, Java, Node.js, Python, Golang, &amp; PHP</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:base        Ubuntu bionic base image with buildpacks for Java, NodeJS and Golang</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:full-cf     cflinuxfs3 base image with buildpacks for Java, .NET, NodeJS, Golang, PHP, HTTPD and NGINX</span><br><span class="line">Paketo Buildpacks:     gcr.io&#x2F;paketo-buildpacks&#x2F;builder:tiny        Tiny base image (bionic build image, distroless run image) with buildpacks for Golang</span><br></pre></td></tr></table></figure></p>
+<h2 id="buildpacks协议规范"><a href="#buildpacks协议规范" class="headerlink" title="buildpacks协议规范"></a>buildpacks协议规范</h2><p><a href="https://github.com/buildpacks/spec/blob/main/buildpack.md" target="_blank" rel="noopener">https://github.com/buildpacks/spec/blob/main/buildpack.md</a></p>
 
     </div>
 
@@ -363,8 +375,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/tree-methods/" rel="tag"># tree-methods</a>
-              <a href="/tags/machine-learning/" rel="tag"># machine-learning</a>
+              <a href="/tags/buildpacks/" rel="tag"># buildpacks</a>
+              <a href="/tags/docker/" rel="tag"># docker</a>
+              <a href="/tags/CI-CD/" rel="tag"># CI/CD</a>
           </div>
 
         
@@ -373,13 +386,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2019-03-26-recommend-git.html" rel="prev" title="为什么要用 git">
-      <i class="fa fa-chevron-left"></i> 为什么要用 git
+    <a href="/2019-08-03-build-xgboost-in-R-with-gpu-support.html" rel="prev" title="在Windows环境下编译XGboost的R语言包GPU支持">
+      <i class="fa fa-chevron-left"></i> 在Windows环境下编译XGboost的R语言包GPU支持
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2019-08-03-build-xgboost-in-R-with-gpu-support.html" rel="next" title="在Windows环境下编译XGboost的R语言包GPU支持">
-      在Windows环境下编译XGboost的R语言包GPU支持 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -479,59 +489,6 @@
   
 
   
-      
-
-<script>
-  if (typeof MathJax === 'undefined') {
-    window.MathJax = {
-      loader: {
-        source: {
-          '[tex]/amsCd': '[tex]/amscd',
-          '[tex]/AMScd': '[tex]/amscd'
-        }
-      },
-      tex: {
-        inlineMath: {'[+]': [['$', '$']]},
-        tags: 'ams'
-      },
-      options: {
-        renderActions: {
-          findScript: [10, doc => {
-            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
-              const display = !!node.type.match(/; *mode=display/);
-              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
-              const text = document.createTextNode('');
-              node.parentNode.replaceChild(text, node);
-              math.start = {node: text, delim: '', n: 0};
-              math.end = {node: text, delim: '', n: 0};
-              doc.math.push(math);
-            });
-          }, '', false],
-          insertedScript: [200, () => {
-            document.querySelectorAll('mjx-container').forEach(node => {
-              let target = node.parentNode;
-              if (target.nodeName.toLowerCase() === 'li') {
-                target.parentNode.classList.add('has-jax');
-              }
-            });
-          }, '', false]
-        }
-      }
-    };
-    (function () {
-      var script = document.createElement('script');
-      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-      script.defer = true;
-      document.head.appendChild(script);
-    })();
-  } else {
-    MathJax.startup.document.state(0);
-    MathJax.texReset();
-    MathJax.typeset();
-  }
-</script>
-
-    
 
   
 

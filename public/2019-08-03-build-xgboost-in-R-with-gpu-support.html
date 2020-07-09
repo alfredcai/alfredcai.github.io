@@ -25,21 +25,23 @@
     var CONFIG = {"hostname":"alfredcai.cz","root":"/","scheme":"Pisces","version":"8.0.0-rc.4","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}}};
   </script>
 
-  <meta name="description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+  <meta name="description" content="由于XGboost的R包并没有对GPU的支持，而我又一定要用R语言，刚好官网上提供了自己编译能让R包支持CUDA。自己在学习实践XGboost时，想用他和随机森林的方法进行比较，需要构建大量的树，用上GPU希望能加快训练速度。但是编译的过程十分的痛苦，记录一下也许可以对别人有所帮助。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="决策树简介">
-<meta property="og:url" content="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+<meta property="og:title" content="在Windows环境下编译XGboost的R语言包GPU支持">
+<meta property="og:url" content="https://alfredcai.cz/2019-08-03-build-xgboost-in-R-with-gpu-support.html">
 <meta property="og:site_name" content="Alfred Cai">
-<meta property="og:description" content="决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。">
+<meta property="og:description" content="由于XGboost的R包并没有对GPU的支持，而我又一定要用R语言，刚好官网上提供了自己编译能让R包支持CUDA。自己在学习实践XGboost时，想用他和随机森林的方法进行比较，需要构建大量的树，用上GPU希望能加快训练速度。但是编译的过程十分的痛苦，记录一下也许可以对别人有所帮助。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2019-07-20T07:10:20.000Z">
-<meta property="article:modified_time" content="2020-07-09T04:02:41.786Z">
+<meta property="article:published_time" content="2019-08-03T03:39:43.000Z">
+<meta property="article:modified_time" content="2020-07-09T04:02:33.711Z">
 <meta property="article:author" content="alfred.cai">
-<meta property="article:tag" content="tree-methods">
+<meta property="article:tag" content="cuda">
 <meta property="article:tag" content="machine-learning">
+<meta property="article:tag" content="xgboost">
+<meta property="article:tag" content="R-package">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+<link rel="canonical" href="https://alfredcai.cz/2019-08-03-build-xgboost-in-R-with-gpu-support.html">
 
 
 <script class="page-configurations">
@@ -52,7 +54,7 @@
   };
 </script>
 
-  <title>决策树简介 | Alfred Cai</title>
+  <title>在Windows环境下编译XGboost的R语言包GPU支持 | Alfred Cai</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-98280031-1"></script>
     <script>
@@ -199,7 +201,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不纯度（impurity）"><span class="nav-number">1.</span> <span class="nav-text">不纯度（impurity）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#剪枝（pruning）"><span class="nav-number">2.</span> <span class="nav-text">剪枝（pruning）</span></a></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#环境介绍"><span class="nav-number">1.</span> <span class="nav-text">环境介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#步骤"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可能遇到的问题"><span class="nav-number">3.</span> <span class="nav-text">可能遇到的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LIBR-LIB-DIR"><span class="nav-number">3.1.</span> <span class="nav-text">LIBR_LIB_DIR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#INTERFACE-INCLUDE-DIRECTORIES"><span class="nav-number">3.2.</span> <span class="nav-text">INTERFACE_INCLUDE_DIRECTORIES</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gendef-file-or-dlltool-file"><span class="nav-number">3.3.</span> <span class="nav-text">gendef file or dlltool file</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cuda版本问题"><span class="nav-number">3.4.</span> <span class="nav-text">cuda版本问题</span></a></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -268,7 +270,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2019-07-20-decsion-tree.html">
+    <link itemprop="mainEntityOfPage" href="https://alfredcai.cz/2019-08-03-build-xgboost-in-R-with-gpu-support.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -281,7 +283,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          决策树简介
+          在Windows环境下编译XGboost的R语言包GPU支持
         </h1>
 
         <div class="post-meta">
@@ -291,14 +293,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2019-07-20 15:10:20" itemprop="dateCreated datePublished" datetime="2019-07-20T15:10:20+08:00">2019-07-20</time>
+              <time title="创建时间：2019-08-03 11:39:43" itemprop="dateCreated datePublished" datetime="2019-08-03T11:39:43+08:00">2019-08-03</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-07-09 12:02:41" itemprop="dateModified" datetime="2020-07-09T12:02:41+08:00">2020-07-09</time>
+                <time title="修改时间：2020-07-09 12:02:33" itemprop="dateModified" datetime="2020-07-09T12:02:33+08:00">2020-07-09</time>
               </span>
 
           
@@ -312,29 +314,49 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>决策树最早是由Brieman等人一起提出的，“学名”可以被叫做连续递归切分的分类和回归树。顾名思义，就是用一种衡量标准去衡量每个变量在当前的数据集上的表现，并以此找到最佳表现的变量最为切分点，生成子树，并连续递归的切分下去，应用在分类或是回归问题当中，到后来还衍生出了随机深林，提升树，还有国人发现的XGBoost方法。<br><a id="more"></a></p>
-<h2 id="不纯度（impurity）"><a href="#不纯度（impurity）" class="headerlink" title="不纯度（impurity）"></a>不纯度（impurity）</h2><p>不纯度是主衡量变量在数据集上表现的重要指标。常见的有信息增益、基尼系数（Gini index）作为特征选取的指标。</p>
+        <p>由于XGboost的R包并没有对GPU的支持，而我又一定要用R语言，刚好官网上提供了自己编译能让R包支持CUDA。自己在学习实践XGboost时，想用他和随机森林的方法进行比较，需要构建大量的树，用上GPU希望能加快训练速度。但是编译的过程十分的痛苦，记录一下也许可以对别人有所帮助。<br><a id="more"></a></p>
+<h2 id="环境介绍"><a href="#环境介绍" class="headerlink" title="环境介绍"></a>环境介绍</h2><ul>
+<li>Windows 10 1903</li>
+<li>R 3.6.1</li>
+<li>Rtools 35</li>
+<li>Visual Studio 2019</li>
+<li>CMake</li>
+<li>cuda 10.1，这次编译使得xgboost能用上cuda 10.1版本</li>
+</ul>
+<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><ol>
+<li>下载代码到本地，包括它所用到的三个其他项目（rabit、dmlc-core、cub）</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> --recursive https://github.com/dmlc/xgboost  </span><br><span class="line"><span class="built_in">cd</span> xgboost</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>用Visual Studio 2019打开项目，在他的CMake setting里的CMake command arguments里写入 <code>\-DUSE\_CUDA=ON -DR\_LIB=ON</code></p>
 <ul>
-<li><p>信息增益：用熵（entropy）来衡量数据集、切分后的数据集中的所包含信息量。两者相减定义为信息增益，表示为特征对数据集的不纯度的减少的程度。信息增益越大说明特征具有更好的分类能力。</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-  g(D,A)    &=H(D)-H(D|A) \\
-  H(D)    &=-\sum_{k=1}^K \frac{C_k}{D} log_2(\frac{C_k}{D}) \\
-  H(D|A)    &=\sum_{i+1}^n \frac{D_i}{D} H(D_i) \\
-\end{aligned}</script><p>$g(D,A)$ 为数据集 $D$ 对特征A的信息增益；$H(D)$ 是数据集的熵；$H(D_i)$ 是数据集 $D_i$ 的熵；$H(D|A)$ 是数据集 $D$ 对特征 $A$ 的条件熵；$D_i$ 是 $D$ 中特征 $A$ 取第 $i$ 个值时的样本子集；$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数。</p>
+<li>如果你遇到了<a href="#LIBR-LIB-DIR">LIBR_LIB_DIR was not set</a> 或是<a href="#INTERFACE-INCLUDE-DIRECTORIES">INTERFACE_INCLUDE_DIRECTORIES property contains path</a> 问题，你需要多加一些参数，最后的命令会是：<code>\-DUSE\_CUDA=ON -DR\_LIB=ON -DLIBR\_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot; -DCMAKE\_INSTALL\_PREFIX=&quot;C:/Program Files (x86)/xgboost&quot;</code>  </li>
+<li><p>Visual Studio 里的Build Root与官方文档不一致，我就选择了它默认的<code>${projectDir}\out\build\${name}</code></p>
 </li>
-<li><p>基尼系数（Gini index）：$Gini(D,A)$ 表示为数据集 $D$ 被特征 $A$ 切分后的不纯度。基尼系数越大说明当前数据集的不纯度越大。我们需要选择找到基尼系数最小的特征作为最优特征。</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-  Gini(D)    &=1-\sum_{k=1}^{K} (\frac{C_k}{D})^2 \\
-  Gini(D,A)    &=\frac{D_1}{D} Gini(D_1)+\frac{D_2}{D} Gini(D_2)
-\end{aligned}</script><p>$C_k$ 是 $D$ 中属于第 $k$ 类的样本集；$n$ 是特征 $A$ 取值的个数；$K$ 是类的个数</p>
+<li><p>如果你用命令行下的cmake的话，cuda 10.1 版本的机器会提示没有找到nvcc，所以我自己尝试下来只能在Visual Studio图形化界面下操作</p>
 </li>
 </ul>
-<h2 id="剪枝（pruning）"><a href="#剪枝（pruning）" class="headerlink" title="剪枝（pruning）"></a>剪枝（pruning）</h2><p>由于连续递归的切分下去，会生成一棵完全树，会存在过拟合的问题，会过分在意噪点数据。为了削弱影响，需要进行剪枝，使树变得简单一点，从而对未知数据有更准确的预测。</p>
+</li>
+<li><p>选择<code>Build &gt; Build ALL</code>进行编译，等待编译完成后再点击<code>Build &gt; install xgboost</code>它会自动帮你安装R包，结束后就可以打开RStudio进行测试了。</p>
 <ul>
-<li>基本想法是用一个损失函数去计算各个节点的误差，内部节点和他的子树的损失函数值减少的值最小的那个进行剪枝，然后用交叉验证选取最佳子树。</li>
+<li>或者你也可以在开始菜单里找到Visual Studio下的命令行，执行<code>cmake --build . --target install --config Release</code>进行编译，编译完成后它会自动安装R包。结束后可以打开RStudio进行测试。两者做的同一件事，只是操作不一样，看个人喜好吧。</li>
 </ul>
+</li>
+<li><p>python版的安装，需要回到主目录下的<code>python-package</code>进行安装，安装完后可以用自带的测试程序进行测试是否安装成功</p>
+</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> python-package  </span><br><span class="line">python setup.py install  </span><br><span class="line">python ..\\tests\\benchmark\\benchmark\_tree.py --tree\_method <span class="string">"gpu\_hist"</span> --iterations 10  </span><br><span class="line">python ..\\tests\\benchmark\\benchmark\_tree.py --tree\_method <span class="string">"hist"</span> --iterations 10</span><br></pre></td></tr></table></figure>
+<h2 id="可能遇到的问题"><a href="#可能遇到的问题" class="headerlink" title="可能遇到的问题"></a>可能遇到的问题</h2><p>由于我的CMake是用Visual Studio下载的，是内嵌在里面的，用起来不是很方便但是还可以用用。如果想用cmake的命令行，可以在开始菜单里找到Visual Studio 2019的文件夹下X64 Native Tools Cammand Prompt for VS 2019.</p>
+<h3 id="LIBR-LIB-DIR"><a href="#LIBR-LIB-DIR" class="headerlink" title="LIBR_LIB_DIR"></a>LIBR_LIB_DIR</h3><blockquote>
+<p>CMake Error at cmake/modules/FindLibR.cmake:44 (message): LIBR_LIB_DIR was not set!</p>
+</blockquote>
+<p>这是因为R语言没有添加到系统环境里，可以在执行cmake的时候指定R语言的目录<code>-DLIBR_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot;</code></p>
+<h3 id="INTERFACE-INCLUDE-DIRECTORIES"><a href="#INTERFACE-INCLUDE-DIRECTORIES" class="headerlink" title="INTERFACE_INCLUDE_DIRECTORIES"></a>INTERFACE_INCLUDE_DIRECTORIES</h3><blockquote>
+<p>CMake Error in C:\Users\alfre\Documents\CodeProjects\GithubProjects\xgboost\CMakeLists.txt:<br>Target “xgboost” INTERFACE_INCLUDE_DIRECTORIES property contains path:<br>“C:/Users/alfred/Documents/CodeProjects/GithubProjects/xgboost/out/install/x64-Debug/include”<br>which is prefixed in the source directory.</p>
+</blockquote>
+<p>这个报错是在Visual Studio生成配置文件时出现的，对比了用命令行生成的文件，发现是z指定到了<code>&quot;C:/Program Files (x86)/xgboost&quot;</code>，如果遇到的朋友可以在参数里再加一条<code>-DCMAKE_INSTALL_PREFIX=&quot;C:/Program Files (x86)/xgboost&quot;</code>， 编译结束之后cmake也没生成<code>C:/Program Files (x86)/xgboost</code>文件夹。</p>
+<h3 id="gendef-file-or-dlltool-file"><a href="#gendef-file-or-dlltool-file" class="headerlink" title="gendef file or dlltool file"></a>gendef file or dlltool file</h3><p>这问题是由于没有没有安装Rtools导致的，奇怪的是，安装程序它会把<code>C:\Rtools\bin</code>添加到系统环境里，但是xgboost用到的两个程序其实是在Rtools所提供的mingw里，也就是说你要自己将<code>C:\Rtools\mingw_64\bin</code>添加到系统环境里的PATH变量里。我一开始以为我安装时取消勾选里这个选项，但是没有添加到环境变量里，但是后来又重装了一遍才发现其实是Rtools自己的问题。</p>
+<h3 id="cuda版本问题"><a href="#cuda版本问题" class="headerlink" title="cuda版本问题"></a>cuda版本问题</h3><p>cuda版本问题永远在你身边！每次拿到新电脑，都是先装cuda再去安装TensorFlow，numpy等等软件包的，你会发现大家的cuda版本都是nvidia出的慢半个版本，导致你会在自己编译还是重装cuda中纠结。而且各家活跃度不一样使得对cuda支持的版本都不一样，所以在问题会不停的出现纠结花好久才解决。<br>这次也是，如果根据官网的文档，在命令行下运行cmake（<code>cmake .. -G&quot;Visual Studio 16 2019&quot; -DUSE_CUDA=ON -DR_LIB=ON -DLIBR_EXECUTABLE=&quot;C:/Program Files/R/R-3.6.1/bin/x64/R.exe&quot;</code>）会出现报错，发现官方支持到cuda10.0。但是！如果用Visual Studio打开项目，用Visual Studio去生成缓存文件，发现并不会报错，能让xgboost支持cuda10.1。最近新买电脑的朋友的可以注意下了，装cuda10.1也没问题。</p>
 
     </div>
 
@@ -363,8 +385,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/tree-methods/" rel="tag"># tree-methods</a>
+              <a href="/tags/cuda/" rel="tag"># cuda</a>
               <a href="/tags/machine-learning/" rel="tag"># machine-learning</a>
+              <a href="/tags/xgboost/" rel="tag"># xgboost</a>
+              <a href="/tags/R-package/" rel="tag"># R-package</a>
           </div>
 
         
@@ -373,12 +397,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2019-03-26-recommend-git.html" rel="prev" title="为什么要用 git">
-      <i class="fa fa-chevron-left"></i> 为什么要用 git
+    <a href="/2019-07-20-decsion-tree.html" rel="prev" title="决策树简介">
+      <i class="fa fa-chevron-left"></i> 决策树简介
     </a></div>
       <div class="post-nav-item">
-    <a href="/2019-08-03-build-xgboost-in-R-with-gpu-support.html" rel="next" title="在Windows环境下编译XGboost的R语言包GPU支持">
-      在Windows环境下编译XGboost的R语言包GPU支持 <i class="fa fa-chevron-right"></i>
+    <a href="/2020-07-03-buildpacks.html" rel="next" title="buildpacks 下个时代的企业镜像打包工具">
+      buildpacks 下个时代的企业镜像打包工具 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -479,59 +503,6 @@
   
 
   
-      
-
-<script>
-  if (typeof MathJax === 'undefined') {
-    window.MathJax = {
-      loader: {
-        source: {
-          '[tex]/amsCd': '[tex]/amscd',
-          '[tex]/AMScd': '[tex]/amscd'
-        }
-      },
-      tex: {
-        inlineMath: {'[+]': [['$', '$']]},
-        tags: 'ams'
-      },
-      options: {
-        renderActions: {
-          findScript: [10, doc => {
-            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
-              const display = !!node.type.match(/; *mode=display/);
-              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
-              const text = document.createTextNode('');
-              node.parentNode.replaceChild(text, node);
-              math.start = {node: text, delim: '', n: 0};
-              math.end = {node: text, delim: '', n: 0};
-              doc.math.push(math);
-            });
-          }, '', false],
-          insertedScript: [200, () => {
-            document.querySelectorAll('mjx-container').forEach(node => {
-              let target = node.parentNode;
-              if (target.nodeName.toLowerCase() === 'li') {
-                target.parentNode.classList.add('has-jax');
-              }
-            });
-          }, '', false]
-        }
-      }
-    };
-    (function () {
-      var script = document.createElement('script');
-      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-      script.defer = true;
-      document.head.appendChild(script);
-    })();
-  } else {
-    MathJax.startup.document.state(0);
-    MathJax.texReset();
-    MathJax.typeset();
-  }
-</script>
-
-    
 
   
 
